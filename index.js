@@ -1,9 +1,23 @@
 const axios = require("axios");
 const express = require("express");
+const mysql = require("mysql");
 const bodyParser = require("body-parser");
 
 const app = express();
 app.use(bodyParser.json());
+const con = mysql.createConnection({
+    host: 'localhost',
+    user: 'root',
+    password: 'root',
+    database: 'chatbot'
+})
+con.connect((err) => {
+    if (err) {
+        console.log(err)
+    } else {
+        console.log('connected')
+    }
+})
 
 
 async function handleCustomMessage(sender, botId, apiKey, message) {
@@ -42,7 +56,7 @@ async function buttonMessage(botId, recipientMobile, authorization) {
             body: {
                 type: 'text',
                 text: {
-                    body: 'Hello, click on the button to filter the {2} class maths videos.'
+                    body: 'Please select the news category you would like to explore.'
                 }
             },
             buttons: [
@@ -84,12 +98,6 @@ async function buttonMessage(botId, recipientMobile, authorization) {
 
 
 
-                // {
-                //     icon: 'registration',
-                //     type: 'dotted',
-                //     body: 'Add another student',
-                //     reply: 'Add another student'
-                // }
             ],
             allow_custom_response: false
         }
@@ -114,210 +122,11 @@ async function buttonMessage(botId, recipientMobile, authorization) {
 
 
 
-// Card Massage
-
-
-
-async function sendNewsAsCardCarousel(botId, apiKey, recipientMobile) {
-    try {
-        console.log("Fetching top news...");
-
-        const response = await axios.get('https://khabrimedia.com/wp-json/wp/v2/posts?categories=8');
-
-        const articles = response.data;
-
-        if (articles.length === 0) {
-            console.log("No news articles found.");
-            return;
-        }
-
-        const cards = [];
-
-        for (let i = 0; i < Math.min(10, articles.length); i++) {
-            const article = articles[i];
-
-            cards.push({
-                header: {
-                    type: 'image',
-                    image: {
-                        url: 'https://sm.mashable.com/t/mashable_sea/photo/default/one-piece-netflix-review_3s1b.2496.jpg', // Replace with an actual image ID
-                        body: 'Test',
-                    },
-                },
-                body: {
-                    title: article.title.rendered,
-                    subtitle: new Date(article.date).toLocaleDateString(),
-                },
-                actions: [
-                    {
-                        button_text: 'Read More',
-                        type: 'website',
-                        website: {
-                            title: 'Read More',
-                            payload: article.link,
-                            url: article.link,
-                        },
-                    },
-                ],
-            });
-        }
-
-        await sendCardCarouselToSwiftchat(botId, apiKey, recipientMobile, cards);
-    } catch (error) {
-        console.error('Error fetching and sending news as a card carousel:', error);
-    }
-}
-
-async function sendCardCarouselToSwiftchat(botId, apiKey, recipientMobile, cards) {
-    try {
-        const cardMessageData = {
-            to: recipientMobile,
-            type: 'card',
-            card: cards,
-        };
-
-        const response = await axios.post(`https://v1-api.swiftchat.ai/api/bots/${botId}/messages`, cardMessageData, {
-            headers: {
-                Authorization: `Bearer ${apiKey}`,
-            },
-        });
-
-        console.log('Card carousel sent successfully:', response.data);
-    } catch (error) {
-        if (error.response) {
-            console.error('Error sending card carousel. Server responded with:', error.response.status, error.response.data);
-        } else if (error.request) {
-            console.error('Error sending card carousel. No response received from server.');
-        } else {
-            console.error('Error sending card carousel:', error.message);
-        }
-    }
-}
-
-
-
 
 // Article Carousel
 
-// async function sendNewsAsArticleCarousel(botId, apiKey, recipientMobile, categoryId, Tags) {
-//     try {
-//         console.log("Fetching top news...");
-
-//         const response = await axios.get(`https://khabrimedia.com/wp-json/wp/v2/posts?categories=${categoryId}`);
-
-//         const articles = response.data;
-
-//         if (articles.length === 0) {
-//             console.log("No news articles found.");
-//             return;
-//         }
-
-//         const cards = [];
-
-//         for (let i = 0; i < Math.min(10, articles.length); i++) {
-//             const article = articles[i];
-//             console.log(article.blog_post_layout_featured_media_urls.thumbnail[0])
-
-//             cards.push({
-//                 tags: [
-//                     Tags
-//                 ],
-//                 title: article.title.rendered,
-
-//                 header: {
-//                     type: 'image',
-//                     image: {
-//                         url: 'https://khabrimedia.com/wp-content/uploads/2023/09/health-tips-150x150.webp', // Replace with an actual image URL
-//                         body: 'Sample caption',
-//                     },
-//                 },
-//                 description: article.excerpt.rendered,
-//                 actions: [
-//                     {
-//                         button_text: 'Read More',
-//                         type: 'website',
-//                         website: {
-//                             title: 'Read More',
-//                             payload: article.link,
-//                             url: article.link,
-//                         },
-//                     },
-//                 ],
-//             });
-//         }
-
-//         await sendArticleCarouselToSwiftchat(botId, apiKey, recipientMobile, cards);
-//     } catch (error) {
-//         console.error('Error fetching and sending news as a card carousel:', error);
-//     }
-// }
 
 
-// async function sendNewsAsArticleCarousel(botId, apiKey, recipientMobile, categoryId, Tags) {
-//     try {
-//         console.log("Fetching top news...");
-
-//         const response = await axios.get(`https://khabrimedia.com/wp-json/wp/v2/posts?categories=${categoryId}`);
-
-//         const articles = response.data;
-
-//         if (articles.length === 0) {
-//             console.log("No news articles found.");
-//             return;
-//         }
-
-//         const cards = [];
-
-//         for (let i = 0; i < Math.min(10, articles.length); i++) {
-//             const article = articles[i];
-
-//             const thumbnailUrl = article.blog_post_layout_featured_media_urls?.thumbnail?.[0];
-
-//             const hasWebpExtension = thumbnailUrl && thumbnailUrl.endsWith('.webp');
-
-//             const card = {
-//                 tags: [Tags],
-//                 title: article.title.rendered,
-//                 description: article.excerpt.rendered,
-//                 actions: [
-//                     {
-//                         button_text: 'Read More',
-//                         type: 'website',
-//                         website: {
-//                             title: 'Read More',
-//                             payload: article.link,
-//                             url: article.link,
-//                         },
-//                     },
-//                 ],
-//             };
-
-//             if (!hasWebpExtension) {
-//                 card.header = {
-//                     type: 'image',
-//                     image: {
-//                         url: thumbnailUrl,
-//                         body: 'Sample caption',
-//                     },
-//                 };
-//             }
-
-//             cards.push(card);
-//         }
-
-//         await sendArticleCarouselToSwiftchat(botId, apiKey, recipientMobile, cards);
-//     } catch (error) {
-//         console.error('Error fetching and sending news as a card carousel:', error);
-//     }
-// }
-
-
-
-
-const userCategoryPages = new Map();
-const userCategoryMap = new Map();
-
-// ...
 
 async function sendNewsAsArticleCarousel(botId, apiKey, recipientMobile, categoryId, Tags, page = 1, articlesPerPage = 10) {
     try {
@@ -326,11 +135,12 @@ async function sendNewsAsArticleCarousel(botId, apiKey, recipientMobile, categor
         const response = await axios.get(`https://khabrimedia.com/wp-json/wp/v2/posts`, {
             params: {
                 categories: categoryId,
-                page: page,                  // Specify the current page number
-                per_page: articlesPerPage,  // Specify the number of articles per page
+                page: page,                  
+                per_page: articlesPerPage,  
             },
         });
         console.log(categoryId)
+        console.log('page',page)
 
         const articles = response.data;
 
@@ -347,9 +157,15 @@ async function sendNewsAsArticleCarousel(botId, apiKey, recipientMobile, categor
             const thumbnailUrl = article.blog_post_layout_featured_media_urls?.thumbnail?.[0];
             const hasWebpExtension = thumbnailUrl && thumbnailUrl.endsWith('.webp');
 
+
+            const maxLength = 100; 
+            const truncatedTitle = article.title.rendered.length > maxLength
+                ? article.title.rendered.substring(0, maxLength - 3) + '...'
+                : article.title.rendered;
+
             const card = {
                 tags: [Tags],
-                title: article.title.rendered,
+                title: truncatedTitle,
                 description: article.excerpt.rendered,
                 actions: [
                     {
@@ -376,7 +192,6 @@ async function sendNewsAsArticleCarousel(botId, apiKey, recipientMobile, categor
 
             cards.push(card);
 
-            // Stop adding articles if we have reached the desired number per page
             if (cards.length >= articlesPerPage) {
                 break;
             }
@@ -384,9 +199,6 @@ async function sendNewsAsArticleCarousel(botId, apiKey, recipientMobile, categor
 
         await sendArticleCarouselToSwiftchat(botId, apiKey, recipientMobile, cards);
 
-        // Update the current page for this user and category
-        const userCategoryKey = `${recipientMobile}_${categoryId}`;
-        userCategoryPages.set(userCategoryKey, page);
 
     } catch (error) {
         console.error('Error fetching and sending news as a card carousel:', error);
@@ -434,7 +246,8 @@ async function dropdownButton(botId, recipientMobile, authorization) {
             body: {
                 type: 'text',
                 text: {
-                    body: 'select the more option'
+                    body: `Please click the button below to see more.
+                    You can also click on the Select Category to go back and explore more news.`
                 }
             },
             buttons: [
@@ -498,59 +311,246 @@ app.post('/user', async (req, res) => {
 
 
         if (req.body.button_response.body === 'Beauty') {
+
+            const mobileNumber = req.body.from;
+            const tags = req.body.button_response.body;
+            const pageNo = 1; 
+
+            const insertQuery = `INSERT INTO User1 (MobileNo, Tags, PageNo) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE Tags = ?, PageNo = ?`;
+
+            con.query(
+                insertQuery,
+                [mobileNumber, tags, pageNo, tags, pageNo],
+                (err, result) => {
+                    if (err) {
+                        console.error('Error inserting/updating user preferences:', err);
+                    } else {
+                        console.log('User preferences inserted/updated successfully:', result);
+                    }
+                }
+            );
+
             categoryId = '70,10'
             await sendNewsAsArticleCarousel(botId, apiKey, req.body.from, categoryId, req.body.button_response.body)
 
+
         }
         if (req.body.button_response.body === 'Entertainment') {
+            const mobileNumber = req.body.from;
+            const tags = req.body.button_response.body;
+            const pageNo = 1; 
+
+            const insertQuery = `INSERT INTO User1 (MobileNo, Tags, PageNo) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE Tags = ?, PageNo = ?`;
+
+            con.query(
+                insertQuery,
+                [mobileNumber, tags, pageNo, tags, pageNo],
+                (err, result) => {
+                    if (err) {
+                        console.error('Error inserting/updating user preferences:', err);
+                    } else {
+                        console.log('User preferences inserted/updated successfully:', result);
+                    }
+                }
+            );
             categoryId = '48,2'
             await sendNewsAsArticleCarousel(botId, apiKey, req.body.from, categoryId, req.body.button_response.body)
         }
         if (req.body.button_response.body === 'States') {
+
+            const mobileNumber = req.body.from;
+            const tags = req.body.button_response.body;
+            const pageNo = 1; 
+
+            const insertQuery = `INSERT INTO User1 (MobileNo, Tags, PageNo) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE Tags = ?, PageNo = ?`;
+
+            con.query(
+                insertQuery,
+                [mobileNumber, tags, pageNo, tags, pageNo],
+                (err, result) => {
+                    if (err) {
+                        console.error('Error inserting/updating user preferences:', err);
+                    } else {
+                        console.log('User preferences inserted/updated successfully:', result);
+                    }
+                }
+            );
+
             categoryId = '85,86,82,88,84,66,92,87,65,90,83,89'
             await sendNewsAsArticleCarousel(botId, apiKey, req.body.from, categoryId, req.body.button_response.body)
         }
         if (req.body.button_response.body === 'Sports') {
+            const mobileNumber = req.body.from;
+            const tags = req.body.button_response.body;
+            const pageNo = 1; 
+
+            const insertQuery = `INSERT INTO User1 (MobileNo, Tags, PageNo) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE Tags = ?, PageNo = ?`;
+
+            con.query(
+                insertQuery,
+                [mobileNumber, tags, pageNo, tags, pageNo],
+                (err, result) => {
+                    if (err) {
+                        console.error('Error inserting/updating user preferences:', err);
+                    } else {
+                        console.log('User preferences inserted/updated successfully:', result);
+                    }
+                }
+            );
+
             categoryId = '49'
             await sendNewsAsArticleCarousel(botId, apiKey, req.body.from, categoryId, req.body.button_response.body)
         }
         if (req.body.button_response.body === 'Astrology') {
+            const mobileNumber = req.body.from;
+            const tags = req.body.button_response.body;
+            const pageNo = 1; 
+
+            const insertQuery = `INSERT INTO User1 (MobileNo, Tags, PageNo) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE Tags = ?, PageNo = ?`;
+
+            con.query(
+                insertQuery,
+                [mobileNumber, tags, pageNo, tags, pageNo],
+                (err, result) => {
+                    if (err) {
+                        console.error('Error inserting/updating user preferences:', err);
+                    } else {
+                        console.log('User preferences inserted/updated successfully:', result);
+                    }
+                }
+            );
+
             categoryId = '80'
             await sendNewsAsArticleCarousel(botId, apiKey, req.body.from, categoryId, req.body.button_response.body)
         }
         if (req.body.button_response.body === 'Consumer Awareness') {
+            const mobileNumber = req.body.from;
+            const tags = req.body.button_response.body;
+            const pageNo = 1; 
+
+            const insertQuery = `INSERT INTO User1 (MobileNo, Tags, PageNo) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE Tags = ?, PageNo = ?`;
+
+            con.query(
+                insertQuery,
+                [mobileNumber, tags, pageNo, tags, pageNo],
+                (err, result) => {
+                    if (err) {
+                        console.error('Error inserting/updating user preferences:', err);
+                    } else {
+                        console.log('User preferences inserted/updated successfully:', result);
+                    }
+                }
+            );
+
             categoryId = '81'
             await sendNewsAsArticleCarousel(botId, apiKey, req.body.from, categoryId, req.body.button_response.body)
         }
         if (req.body.button_response.body === 'Education') {
+
+            const mobileNumber = req.body.from;
+            const tags = req.body.button_response.body;
+            const pageNo = 1; 
+
+            const insertQuery = `INSERT INTO User1 (MobileNo, Tags, PageNo) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE Tags = ?, PageNo = ?`;
+
+            con.query(
+                insertQuery,
+                [mobileNumber, tags, pageNo, tags, pageNo],
+                (err, result) => {
+                    if (err) {
+                        console.error('Error inserting/updating user preferences:', err);
+                    } else {
+                        console.log('User preferences inserted/updated successfully:', result);
+                    }
+                }
+            );
+
             categoryId = '11,13'
             await sendNewsAsArticleCarousel(botId, apiKey, req.body.from, categoryId, req.body.button_response.body)
         }
 
 
-        if (req.body.button_response.body === 'More data') {
-            // Get the current page for this user and category
-            const userCategoryKey = `${req.body.from}_${categoryId}`;
-            console.log('userCategoryKey', userCategoryKey)
-            const currentPage = userCategoryPages.get(userCategoryKey) || 1;
 
-            await sendNewsAsArticleCarousel(botId, apiKey, req.body.from, categoryId, req.body.button_response.body, currentPage + 1);
+        if (req.body.button_response.body === 'More data') {
+            const mobileNumber = req.body.from;
+            let categoryid
+            let nextPage
+
+            const selectQuery = `SELECT Tags, PageNo FROM User1 WHERE MobileNo = ? ORDER BY Id DESC LIMIT 1`;
+            console.log(selectQuery);
+                                    
+            con.query(selectQuery, [mobileNumber], async (err, rows) => {
+                if (err) {
+                    console.error('Error retrieving user preferences:', err);
+                } else if (rows.length > 0) {
+                    const { Tags: category, PageNo: currentPage } = rows[0];
+                    console.log("category",category)
+                    if (category == "Beauty") {
+                        categoryid = '70,10'
+                        nextPage = currentPage + 1;
+                    }
+                    if (category == "Entertainment") {
+                        categoryid = '48,2'
+                        nextPage = currentPage + 1;
+                    }
+                    if (category == "States") {
+                        categoryid = '85,86,82,88,84,66,92,87,65,90,83,89'
+                        nextPage = currentPage + 1;
+                    }
+                    if (category == "Sports") {
+                        categoryid = '49'
+                        nextPage = currentPage + 1;
+                    }
+                    if (category == "Astrology") {
+                        categoryid = '80'
+                        nextPage = currentPage + 1;
+                    }
+                    if (category == "Consumer Awareness") {
+                        categoryid = '81'
+                        nextPage = currentPage + 1;
+                    }
+
+                    if (category == "Education") {
+                        categoryid = '11,13'
+                        nextPage = currentPage + 1;
+                    }
+
+                    await sendNewsAsArticleCarousel(botId, apiKey, req.body.from, categoryid, category, nextPage);
+                    const updatePageQuery = `UPDATE User1 SET PageNo = ? WHERE MobileNo = ?`;
+
+                    con.query(updatePageQuery, [nextPage, mobileNumber], (updateErr, updateResult) => {
+                        if (updateErr) {
+                            console.error('Error updating page number:', updateErr);
+                        } else {
+                            console.log('Page number updated successfully:', updateResult);
+                        }
+                    });
+
+                    await dropdownButton(botId, req.body.from, apiKey)
+                }
+            });
         }
 
         if (req.body.button_response.body === 'Select Category') {
             await buttonMessage(botId, req.body.from, apiKey)
+            const mobileNumber = req.body.from;
+            const page = 1
+
+            const updatePageQuery = `UPDATE User1 SET PageNo = ? WHERE MobileNo = ?`;
+
+            con.query(updatePageQuery, [page, mobileNumber], (updateErr, updateResult) => {
+                if (updateErr) {
+                    console.error('Error updating page number:', updateErr);
+                } else {
+                    console.log('Page number updated successfully:', updateResult);
+                }
+            });
+
         }
 
-        if (req.body.button_response.body !== 'Select Category') {
+        if (req.body.button_response.body !== 'Select Category' & req.body.button_response.body !== 'More data') {
             await dropdownButton(botId, req.body.from, apiKey)
         }
-
-
-
-
-
-
-
 
     }
 
